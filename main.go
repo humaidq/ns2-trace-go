@@ -90,89 +90,132 @@ func main() {
 			ctx.Data["Analysis"] = analysis
 			ctx.HTML(200, "analysis")
 		})
-		m.Get("/:from/:to/:type/:zoom", func(ctx *macaron.Context) {
-			analysis, ok := Analysises[ctx.Params("id")]
-			if !ok {
-				ctx.PlainText(404, []byte("Analysis results does not exist"))
-				return
-			}
-			var from, to int
-			var pType string = ctx.Params("type")
-			var err error
-
-			from, err = strconv.Atoi(ctx.Params("from"))
-			if err != nil {
-				ctx.PlainText(400, []byte("Malformed request parameters"))
-				return
-			}
-			to, err = strconv.Atoi(ctx.Params("to"))
-			if err != nil {
-				ctx.PlainText(400, []byte("Malformed request parameters"))
-				return
-			}
-
-			var st *JitterStat = nil
-			for _, stat := range analysis.JitterStats {
-				if stat.FromNode == from && stat.ToNode == to && stat.PacketType == pType {
-					st = stat
+		m.Group("/:from/:to/:type", func() {
+			m.Get("/data.json", func(ctx *macaron.Context) {
+				analysis, ok := Analysises[ctx.Params("id")]
+				if !ok {
+					ctx.PlainText(404, []byte("Analysis results does not exist"))
+					return
 				}
-			}
-			if st == nil {
-				ctx.PlainText(404, []byte("The jitter stat requested does not exist"))
-				return
-			}
+				var from, to int
+				var pType string = ctx.Params("type")
+				var err error
 
-			ctx.Data["ID"] = ctx.Params("id")
-			ctx.Data["Stat"] = st
+				from, err = strconv.Atoi(ctx.Params("from"))
+				if err != nil {
+					ctx.PlainText(400, []byte("Malformed request parameters"))
+					return
+				}
+				to, err = strconv.Atoi(ctx.Params("to"))
+				if err != nil {
+					ctx.PlainText(400, []byte("Malformed request parameters"))
+					return
+				}
 
-			var seqValues, jitterValues []float64
+				var st *JitterStat = nil
+				for _, stat := range analysis.JitterStats {
+					if stat.FromNode == from && stat.ToNode == to && stat.PacketType == pType {
+						st = stat
+					}
+				}
+				if st == nil {
+					ctx.PlainText(404, []byte("The jitter stat requested does not exist"))
+					return
+				}
+				var seqValues, jitterValues []float64
 
-			for seq := range st.Jitter {
-				seqValues = append(seqValues, float64(seq))
-			}
-			sort.Float64s(seqValues)
+				for seq := range st.Jitter {
+					seqValues = append(seqValues, float64(seq))
+				}
+				sort.Float64s(seqValues)
 
-			for v := range seqValues {
-				jitterValues = append(jitterValues, st.Jitter[v])
-				//fmt.Printf("(%d - %f) ", v, st.Jitter[v])
-			}
-			//fmt.Println(jitterValues)
+				for v := range seqValues {
+					jitterValues = append(jitterValues, st.Jitter[v])
+				}
+				ctx.JSON(200, [][]float64{seqValues, jitterValues})
+			})
+			m.Get("/:zoom", func(ctx *macaron.Context) {
+				analysis, ok := Analysises[ctx.Params("id")]
+				if !ok {
+					ctx.PlainText(404, []byte("Analysis results does not exist"))
+					return
+				}
+				var from, to int
+				var pType string = ctx.Params("type")
+				var err error
 
-			graph := chart.Chart{
-				XAxis: chart.XAxis{
-					Name: "Sequence",
-				},
-				YAxis: chart.YAxis{
-					Name: "Jitter",
-				},
-				Series: []chart.Series{
-					chart.ContinuousSeries{
-						Style: chart.Style{
-							StrokeColor: drawing.ColorRed,
-						},
-						XValues: seqValues,
-						YValues: jitterValues,
+				from, err = strconv.Atoi(ctx.Params("from"))
+				if err != nil {
+					ctx.PlainText(400, []byte("Malformed request parameters"))
+					return
+				}
+				to, err = strconv.Atoi(ctx.Params("to"))
+				if err != nil {
+					ctx.PlainText(400, []byte("Malformed request parameters"))
+					return
+				}
+
+				var st *JitterStat = nil
+				for _, stat := range analysis.JitterStats {
+					if stat.FromNode == from && stat.ToNode == to && stat.PacketType == pType {
+						st = stat
+					}
+				}
+				if st == nil {
+					ctx.PlainText(404, []byte("The jitter stat requested does not exist"))
+					return
+				}
+
+				ctx.Data["ID"] = ctx.Params("id")
+				ctx.Data["Stat"] = st
+
+				var seqValues, jitterValues []float64
+
+				for seq := range st.Jitter {
+					seqValues = append(seqValues, float64(seq))
+				}
+				sort.Float64s(seqValues)
+
+				for v := range seqValues {
+					jitterValues = append(jitterValues, st.Jitter[v])
+				}
+
+				graph := chart.Chart{
+					XAxis: chart.XAxis{
+						Name: "Sequence",
 					},
-				},
-			}
-			if ctx.Params("zoom") == "zoom" {
-				graph.YAxis.Range = &chart.ContinuousRange{
-					Min: -0.5,
-					Max: 0.5,
+					YAxis: chart.YAxis{
+						Name: "Jitter",
+					},
+					Series: []chart.Series{
+						chart.ContinuousSeries{
+							Style: chart.Style{
+								StrokeColor: drawing.ColorRed,
+							},
+							XValues: seqValues,
+							YValues: jitterValues,
+						},
+					},
 				}
-				ctx.Data["IsZoom"] = true
-			}
+				if ctx.Params("zoom") == "zoom" {
+					graph.YAxis.Range = &chart.ContinuousRange{
+						Min: -0.5,
+						Max: 0.5,
+					}
+					ctx.Data["IsZoom"] = true
+				}
 
-			var imgBuf bytes.Buffer
-			err = graph.Render(chart.SVG, &imgBuf)
-			if err != nil {
-				ctx.PlainText(500, []byte(fmt.Sprintf("Failed to generate jitter graph: %s", err)))
-				return
-			}
+				var imgBuf bytes.Buffer
+				err = graph.Render(chart.SVG, &imgBuf)
+				if err != nil {
+					ctx.PlainText(500, []byte(fmt.Sprintf("Failed to generate jitter graph: %s", err)))
+					return
+				}
 
-			ctx.Data["Graph"] = template.HTML(imgBuf.String())
+				ctx.Data["Graph"] = template.HTML(imgBuf.String())
 
-			ctx.HTML(200, "jitter")
+				ctx.HTML(200, "jitter")
+			})
 		})
 	})
 	log.Println("Running on 0.0.0.0:" + port)
