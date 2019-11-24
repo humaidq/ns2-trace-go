@@ -1,0 +1,21 @@
+image: archlinux
+packages:
+  - go
+sources:
+  - https://git.sr.ht/~humaid/ns2-trace-go
+tasks:
+  - setup: |
+      cd ns2-trace-go
+      go get ./...
+  - format: |
+      cd ns2-trace-go
+      go fmt $(go list ./... | grep -v /vendor/)
+      go vet $(go list ./... | grep -v /vendor/)
+  - test: |
+      cd ns2-trace-go
+      go test -cover -race $(go list ./... | grep -v /vendor/)
+  - build: |
+      cd ns2-trace-go
+      go build
+
+
