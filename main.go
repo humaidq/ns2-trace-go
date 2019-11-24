@@ -60,7 +60,7 @@ func main() {
 		var trace []*TraceItem
 		trace, err = GetTracesFromBuffer(buf)
 		if err != nil {
-			ctx.PlainText(400, []byte(fmt.Sprintf("Failed to parse file: %s", err)))
+			ctx.PlainText(400, []byte(fmt.Sprintf("Failed to parse file: %s\n\nMake sure use use trace-full or namtrace-full when generating the file!", err)))
 			return
 		}
 		jsChan := make(chan []*JitterStat, 1)

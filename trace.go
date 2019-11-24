@@ -14,6 +14,7 @@ const (
 	ENQ         // event: enqueue
 	DEQ         // event: dequeue
 	DROP        // event: drop
+	COLL        // event: collision (MAC level)
 )
 
 // TraceFlag represents a trace item flag.
@@ -63,7 +64,11 @@ type TraceStats struct {
 	TotalEntries    int
 	ReceivedPackets int
 	DroppedPackets  int
+	Collisions      int
+	LostPackets     int
+	Throughput      float32
 	AvgHops         float32
+	AvgDelay        float32
 	ActiveNodes     int
 	TotalBandwidth  int
 	NetworkTime     float64
@@ -73,7 +78,15 @@ func CalculateStats(traces []*TraceItem) (stat TraceStats) {
 	var enq int
 	var hop float32
 	var nodes []int
+	var totalSent int
+	//var packetsID []int
+	var delaySum float32
+	var delayCount int
+	sentTime := make(map[int]float32) // unique packet id, time sent
 	for _, trace := range traces {
+		if !(trace.PacketType == "tcp" || trace.PacketType == "udp" || trace.PacketType == "cbr") {
+			continue
+		}
 		stat.TotalEntries++
 		switch trace.Event {
 		case REC:
@@ -84,18 +97,21 @@ func CalculateStats(traces []*TraceItem) (stat TraceStats) {
 			enq++
 		case DEQ:
 			// This allows us to accurately calculate hops
+			totalSent++
 			if enq > 0 {
 				enq--
 				hop++
 			}
+		case COLL:
+			stat.Collisions++
 		default:
 			continue
 		}
-		if !hasNode(nodes, trace.FromNode) {
+		if !hasInt(nodes, trace.FromNode) {
 			nodes = append(nodes, trace.FromNode)
 			stat.ActiveNodes++
 		}
-		if !hasNode(nodes, trace.ToNode) {
+		if !hasInt(nodes, trace.ToNode) {
 			nodes = append(nodes, trace.ToNode)
 			stat.ActiveNodes++
 		}
@@ -104,14 +120,26 @@ func CalculateStats(traces []*TraceItem) (stat TraceStats) {
 		if trace.Time > stat.NetworkTime {
 			stat.NetworkTime = trace.Time
 		}
+		if trace.Event == ENQ {
+			if _, ok := sentTime[trace.UniquePacketID]; !ok {
+				sentTime[trace.UniquePacketID] = float32(trace.Time)
+			}
+		}
+		if trace.Event == REC {
+			delayCount++
+			delaySum += float32(trace.Time) - sentTime[trace.UniquePacketID]
+		}
 	}
+	stat.LostPackets = (totalSent - stat.ReceivedPackets)
+	stat.Throughput = (float32(stat.ReceivedPackets) / float32(totalSent)) * 100
 	stat.AvgHops = (hop / float32(stat.ReceivedPackets))
+	stat.AvgDelay = (delaySum / float32(delayCount))
 	return
 }
 
-func hasNode(nodes []int, node int) bool {
-	for i := range nodes {
-		if i == node {
+func hasInt(ints []int, s int) bool {
+	for i := range ints {
+		if i == s {
 			return true
 		}
 	}
@@ -121,6 +149,9 @@ func hasNode(nodes []int, node int) bool {
 func CalculateJitters(traces []*TraceItem) (s []*JitterStat) {
 	for _, trace := range traces {
 		if trace.Event != REC {
+			continue
+		}
+		if !(trace.PacketType == "tcp" || trace.PacketType == "udp" || trace.PacketType == "cbr") {
 			continue
 		}
 		var js *JitterStat = nil

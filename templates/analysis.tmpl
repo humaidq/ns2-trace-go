@@ -5,7 +5,11 @@
 	<h2>Statistics</h2>
 	<p>Total number of received packets: {{.Analysis.Stats.ReceivedPackets}}</p>
 	<p>Total number of dropped packets: {{.Analysis.Stats.DroppedPackets}}</p>
+	<p>Total number of lost packets: {{.Analysis.Stats.LostPackets}}</p>
+	<p>Total number of collisions: {{.Analysis.Stats.Collisions}}</p>
+	<p>Network throughput: {{.Analysis.Stats.Throughput}}</p>
 	<p>Average number of hops: {{.Analysis.Stats.AvgHops}}</p>
+	<p>Average delay: {{.Analysis.Stats.AvgDelay}}</p>
 	<p>Total number of active nodes: {{.Analysis.Stats.ActiveNodes}}</p>
 	<p>Total bandwidth used: {{.Analysis.Stats.TotalBandwidth}}</p>
 	<p>Total network time: {{.Analysis.Stats.NetworkTime}}</p>
