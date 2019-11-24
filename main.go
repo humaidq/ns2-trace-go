@@ -8,8 +8,11 @@ import (
 	chart "github.com/wcharczuk/go-chart"
 	"gopkg.in/macaron.v1"
 	"html/template"
+	"log"
 	"math/rand"
 	"mime/multipart"
+	"net/http"
+	"os"
 	"sort"
 	"strconv"
 )
@@ -23,6 +26,12 @@ type Analysis struct {
 }
 
 func main() {
+	port := "4000"
+
+	if os.Getenv("PORT") != "" {
+		port = os.Getenv("PORT")
+	}
+
 	Analysises = make(map[string]Analysis)
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())
@@ -146,7 +155,8 @@ func main() {
 			ctx.HTML(200, "jitter")
 		})
 	})
-	m.Run()
+	log.Println("Running on 0.0.0.0:" + port)
+	log.Println(http.ListenAndServe("0.0.0.0:"+port, m))
 }
 
 // SubmitForm holds the POST submission form for uploading the trace file.
