@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-macaron/binding"
 	chart "github.com/wcharczuk/go-chart"
+	"github.com/wcharczuk/go-chart/drawing"
 	"gopkg.in/macaron.v1"
 	"html/template"
 	"log"
@@ -80,7 +81,7 @@ func main() {
 			ctx.Data["Analysis"] = analysis
 			ctx.HTML(200, "analysis")
 		})
-		m.Get("/:from/:to/:type", func(ctx *macaron.Context) {
+		m.Get("/:from/:to/:type/:zoom", func(ctx *macaron.Context) {
 			analysis, ok := Analysises[ctx.Params("id")]
 			if !ok {
 				ctx.PlainText(404, []byte("Analysis results does not exist"))
@@ -129,18 +130,28 @@ func main() {
 			//fmt.Println(jitterValues)
 
 			graph := chart.Chart{
+				XAxis: chart.XAxis{
+					Name: "Sequence",
+				},
 				YAxis: chart.YAxis{
-					Range: &chart.ContinuousRange{
-						Min: -0.5,
-						Max: 0.5,
-					},
+					Name: "Jitter",
 				},
 				Series: []chart.Series{
 					chart.ContinuousSeries{
+						Style: chart.Style{
+							StrokeColor: drawing.ColorRed,
+						},
 						XValues: seqValues,
 						YValues: jitterValues,
 					},
 				},
+			}
+			if ctx.Params("zoom") == "zoom" {
+				graph.YAxis.Range = &chart.ContinuousRange{
+					Min: -0.5,
+					Max: 0.5,
+				}
+				ctx.Data["IsZoom"] = true
 			}
 
 			var imgBuf bytes.Buffer

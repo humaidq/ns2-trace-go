@@ -1,10 +1,18 @@
 {{ template "base/head" .}}
 <div class="container">
-	<h1 class="title">NS2 Trace File Analysis Result ({{.Analysis.Title}})</h1>
+	<h1 class="title">NS2 Trace File Analysis Result</h1>
 	<h2 class="title">Jitter graph for {{.Stat.FromNode}}->{{.Stat.ToNode}}
 	({{.Stat.PacketType}})</h2>
 	<p><a class="btn" href="/{{.ID}}">&#9664; Go back</a></p>
 	{{.Graph}}
+	<br>
+	{{ if .IsZoom}}
+	<p><i>This is a zoomed-in view of the graph. <a href="full">Switch to full
+	view</a>.</i></p>{{else}}
+	<p><i>This is a full view of the graph. <a href="zoom">Switch to zoomed
+	view</a>.</i></p>{{end}}
+	<br>
+	<br>
 
 </div>
 {{ template "base/footer" .}}
