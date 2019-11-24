@@ -1,0 +1,17 @@
+{{ template "base/head" .}}
+<div class="container">
+	<h1 class="title">NS Trace File Analyser</h1>
+
+	<p>This website allows you to analyse trace files created by <a
+	href="https://www.isi.edu/nsnam/ns/" target="_blank">NS2</a>.</p>
+
+	<p><b>Important note:</b> Make sure you use 'trace-all' for generating your trace file,
+	otherwise it may not be able to analyse your data properly.</p>
+
+<h2>Upload your trace file</h2>
+	<form method="post" enctype="multipart/form-data">
+		<p>Trace File: <input type="file" name="file" /></p>
+		<button type="submit" class="btn">Analyse</button>
+	</form>
+</div>
+{{ template "base/footer" .}}

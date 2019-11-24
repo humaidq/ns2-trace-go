@@ -1,0 +1,35 @@
+{{ template "base/head" .}}
+<div class="container">
+	<h1 class="title">NS2 Trace File Analysis Result</h1>
+	<p><a class="btn" href="/">&#9664; Try another file</a></p>
+	<h2>Statistics</h2>
+	<p>Total number of received packets: {{.Analysis.Stats.ReceivedPackets}}</p>
+	<p>Total number of dropped packets: {{.Analysis.Stats.DroppedPackets}}</p>
+	<p>Average number of hops: {{.Analysis.Stats.AvgHops}}</p>
+	<p>Total number of active nodes: {{.Analysis.Stats.ActiveNodes}}</p>
+	<p>Total bandwidth used: {{.Analysis.Stats.TotalBandwidth}}</p>
+	<p>Total network time: {{.Analysis.Stats.NetworkTime}}</p>
+	<p>Total trace file entries: {{.Analysis.Stats.TotalEntries}}</p>
+	<h2>Jitter</h2>
+	<table>
+	<tr>
+	<th>From Node</th>
+	<th>To Node</th>
+	<th>Packet Type</th>
+	<th>Actions</th>
+	</tr>
+	{{range $jitter := .Analysis.JitterStats}}
+	<tr>
+<td>{{$jitter.FromNode}}</td>
+<td>{{$jitter.ToNode}}</td>
+<td>{{$jitter.PacketType}}</td>
+<td><a class="btn"
+href="{{$.ID}}/{{$jitter.FromNode}}/{{$jitter.ToNode}}/{{$jitter.PacketType}}">View
+jitter</a></td>
+</tr>
+	{{end}}
+	</table>
+<br>
+<br>
+</div>
+{{ template "base/footer" .}}
