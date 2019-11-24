@@ -63,10 +63,19 @@ func main() {
 			ctx.PlainText(400, []byte(fmt.Sprintf("Failed to parse file: %s", err)))
 			return
 		}
+		jsChan := make(chan []*JitterStat, 1)
+		statsChan := make(chan TraceStats, 1)
+		go func() {
+			jsChan <- CalculateJitters(trace)
+		}()
+		go func() {
+			statsChan <- CalculateStats(trace)
+		}()
+
 		Analysises[analysisID] = Analysis{
 			Traces:      trace,
-			JitterStats: CalculateJitters(trace),
-			Stats:       CalculateStats(trace),
+			JitterStats: <-jsChan,
+			Stats:       <-statsChan,
 		}
 		ctx.Redirect(fmt.Sprintf("/%s", analysisID))
 	})
